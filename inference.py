@@ -33,8 +33,16 @@ def inference(data_dir, model_dir, output_dir, args):
     device = torch.device("cuda" if use_cuda else "cpu")
 
     num_classes = MaskBaseDataset.num_classes  # 18
-    model = load_model(model_dir, num_classes, device).to(device)
-    model.eval()
+    #model = load_model(model_dir, num_classes, device).to(device)
+    #model.eval()
+    
+    masknet = load_model("./model/mask", 3, device).to(device)
+    masknet.eval()
+    agenet = load_model("./model/age", 3, device).to(device)
+    agenet.eval()
+    gendernet = load_model("./model/gender", 2, device).to(device)
+    gendernet.eval()
+
 
     img_root = os.path.join(data_dir, 'images')
     info_path = os.path.join(data_dir, 'info.csv')
@@ -45,7 +53,7 @@ def inference(data_dir, model_dir, output_dir, args):
     loader = torch.utils.data.DataLoader(
         dataset,
         batch_size=args.batch_size,
-        num_workers=8,
+        num_workers=4,
         shuffle=False,
         pin_memory=use_cuda,
         drop_last=False,
@@ -56,9 +64,16 @@ def inference(data_dir, model_dir, output_dir, args):
     with torch.no_grad():
         for idx, images in enumerate(loader):
             images = images.to(device)
-            pred = model(images)
-            pred = pred.argmax(dim=-1)
-            preds.extend(pred.cpu().numpy())
+            #pred = model(images)
+            #pred = pred.argmax(dim=-1)
+            #preds.extend(pred.cpu().numpy())
+            mask = masknet(images)
+            mask = mask.argmax(dim=-1)
+            age = agenet(images)
+            age = age.argmax(dim=-1)
+            gender = gendernet(images)
+            gender = gender.argmax(dim=-1)
+            preds.extend(mask.cpu().numpy()*6 + gender.cpu().numpy()*3 + age.cpu().numpy())
 
     info['ans'] = preds
     info.to_csv(os.path.join(output_dir, f'output.csv'), index=False)
@@ -70,7 +85,7 @@ if __name__ == '__main__':
 
     # Data and model checkpoints directories
     parser.add_argument('--batch_size', type=int, default=1000, help='input batch size for validing (default: 1000)')
-    parser.add_argument('--resize', type=tuple, default=(96, 128), help='resize size for image when you trained (default: (96, 128))')
+    parser.add_argument('--resize', type=tuple, default=(228, 228), help='resize size for image when you trained (default: (96, 128))')
     parser.add_argument('--model', type=str, default='BaseModel', help='model type (default: BaseModel)')
 
     # Container environment

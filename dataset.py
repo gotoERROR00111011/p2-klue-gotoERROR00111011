@@ -5,7 +5,7 @@ from collections import defaultdict
 import numpy as np
 import torch
 import torch.utils.data as data
-from PIL import Image
+from PIL import Image, ImageFilter
 from torch.utils.data import Subset
 from torchvision import transforms
 from torchvision.transforms import *
@@ -15,6 +15,8 @@ IMG_EXTENSIONS = [
     ".PNG", ".ppm", ".PPM", ".bmp", ".BMP",
 ]
 
+#SM_CHANNEL_EVAL=./input/data/eval/ SM_CHANNEL_MODEL=./model/exp4 SM_OUTPUT_DATA_DIR=./output/submission/ python inference.py --model BaseModel
+#python inference.py --model BaseModel SM_CHANNEL_EVAL=./input/data/eval/ SM_CHANNEL_MODEL=./model/exp4 SM_OUTPUT_DATA_DIR=./output/submission/
 
 def is_image_file(filename):
     return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
@@ -53,10 +55,12 @@ class CustomAugmentation:
         self.transform = transforms.Compose([
             CenterCrop((320, 256)),
             Resize(resize, Image.BILINEAR),
-            ColorJitter(0.1, 0.1, 0.1, 0.1),
+            #RandomRotation([-5, 5]),
+            RandomHorizontalFlip(p=0.5),
+            #ColorJitter(0.1, 0.1, 0.1, 0.1),
             ToTensor(),
             Normalize(mean=mean, std=std),
-            AddGaussianNoise()
+            #AddGaussianNoise()
         ])
 
     def __call__(self, image):
@@ -120,7 +124,9 @@ class MaskBaseDataset(data.Dataset):
 
                 id, gender, race, age = profile.split("_")
                 gender_label = getattr(self.GenderLabels, gender)
-                age_label = self.AgeGroup.map_label(age)
+                #age_label = self.AgeGroup.map_label(age)
+                #----------------------------------------------------------------------------------------
+                age_label = age
 
                 self.image_paths.append(img_path)
                 self.mask_labels.append(mask_label)
@@ -152,7 +158,10 @@ class MaskBaseDataset(data.Dataset):
         multi_class_label = self.encode_multi_class(mask_label, gender_label, age_label)
 
         image_transform = self.transform(image)
-        return image_transform, multi_class_label
+        #return image_transform, mask_label
+        #return image_transform, gender_label
+        return image_transform, age_label
+        #return image_transform, multi_class_label
 
     def __len__(self):
         return len(self.image_paths)
@@ -258,6 +267,7 @@ class TestDataset(data.Dataset):
     def __init__(self, img_paths, resize, mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246)):
         self.img_paths = img_paths
         self.transform = transforms.Compose([
+            CenterCrop((320, 256)),
             Resize(resize, Image.BILINEAR),
             ToTensor(),
             Normalize(mean=mean, std=std),

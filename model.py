@@ -51,3 +51,155 @@ class MyModel(nn.Module):
         2. 결과로 나온 output 을 return 해주세요
         """
         return x
+
+
+
+# Custom Model Template
+class MaskModel(nn.Module):
+    def __init__(self, num_classes):
+        super().__init__()
+        #from torchvision.models import wide_resnet50_2
+        #self.net = wide_resnet50_2(pretrained=True)
+        from torchvision.models import vgg19_bn
+        self.net = vgg19_bn(pretrained=True)
+        self.net.classifier = nn.Sequential(
+            nn.Linear(512 * 7 * 7, 4096),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(4096, 4096),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(4096, num_classes)
+        )
+
+    def forward(self, x):
+        x = self.net(x)
+        return x
+        
+
+
+
+class Identity(nn.Module):
+    def __init__(self):
+        super(Identity, self).__init__()
+        
+    def forward(self, x):
+        return x
+
+# Custom Model Template
+class FaceNet(nn.Module):
+    def __init__(self, num_classes):
+        super().__init__()
+        from facenet_pytorch import InceptionResnetV1
+        self.net = InceptionResnetV1(pretrained='vggface2')
+        self.net.last_bn = Identity()
+
+        #for i, param in enumerate(self.net.parameters()):
+        #    param.requires_grad = False
+
+        self.net.last_linear = nn.Sequential(
+            # more layer
+            # more featrue
+            nn.Linear(1792, 4096),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(4096, num_classes)
+        )
+        
+    def forward(self, x):
+        x = self.net(x)
+        return x
+
+
+# Custom Model Template
+class EffNet(nn.Module):
+    def __init__(self, num_classes):
+        super().__init__()
+        from efficientnet_pytorch import EfficientNet
+        self.model = EfficientNet.from_pretrained('efficientnet-b7')
+        self.model.last_bn = Identity()
+
+        #for i, param in enumerate(self.net.parameters()):
+        #    param.requires_grad = False
+
+        self.model._fc = nn.Sequential(
+            nn.Linear(2560, num_classes),
+        )
+        
+    def forward(self, x):
+        x = self.model(x)
+        return x
+
+
+class AgeNet(nn.Module):
+    def __init__(self, num_classes):
+        super().__init__()
+        from facenet_pytorch import InceptionResnetV1
+        self.net = InceptionResnetV1(pretrained='vggface2')
+        self.net.last_bn = Identity()
+
+        #for i, param in enumerate(self.net.parameters()):
+        #    param.requires_grad = False
+
+        self.net.last_linear = nn.Sequential(
+            # more layer
+            # more featrue
+            nn.Linear(1792, 4096),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(4096, 3)
+        )
+        
+    def forward(self, x):
+        x = self.net(x)
+        return x
+
+
+class GenderNet(nn.Module):
+    def __init__(self, num_classes):
+        super().__init__()
+        from facenet_pytorch import InceptionResnetV1
+        self.net = InceptionResnetV1(pretrained='vggface2')
+        self.net.last_bn = Identity()
+
+        #for i, param in enumerate(self.net.parameters()):
+        #    param.requires_grad = False
+
+        self.net.last_linear = nn.Sequential(
+            # more layer
+            # more featrue
+            nn.Linear(1792, 4096),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(4096, 2)
+        )
+        
+    def forward(self, x):
+        x = self.net(x)
+        return x
+
+
+class MaskNet(nn.Module):
+    def __init__(self, num_classes):
+        super().__init__()
+        from facenet_pytorch import InceptionResnetV1
+        self.net = InceptionResnetV1(pretrained='vggface2')
+        self.net.last_bn = Identity()
+
+        #for i, param in enumerate(self.net.parameters()):
+        #    param.requires_grad = False
+
+        self.net.last_linear = nn.Sequential(
+            # more layer
+            # more featrue
+            nn.Linear(1792, 4096),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(4096, 3)
+        )
+        
+    def forward(self, x):
+        x = self.net(x)
+        return x
+
+
